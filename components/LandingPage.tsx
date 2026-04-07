@@ -175,7 +175,7 @@ const slides = [
           {[
             { prompt: '$', cmd: ' npx create-next-app my-blog', color: 'text-green-400' },
             { prompt: '', cmd: '✓ Blog generated successfully', color: 'text-emerald-300' },
-            { prompt: '', cmd: '✓ 3 articles created', color: 'text-emerald-300' },
+            { prompt: '', cmd: '✓ Full site generated', color: 'text-emerald-300' },
             { prompt: '', cmd: '✓ Tailwind CSS configured', color: 'text-emerald-300' },
             { prompt: '$', cmd: ' vercel deploy', color: 'text-yellow-300' },
             { prompt: '', cmd: '🎉 Live at my-blog.vercel.app', color: 'text-cyan-300' },

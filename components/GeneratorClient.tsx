@@ -3,8 +3,7 @@
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BlogConfig, BlogSiteConfig, GeneratedArticle, GenerationResult, PRESET_COLORS, BLOG_THEMES } from '@/models/Blog';
-import ArticlePreview from '@/components/ArticlePreview';
+import { BlogConfig, BlogSiteConfig, PRESET_COLORS, BLOG_THEMES } from '@/models/Blog';
 import ResultsPanel from '@/components/ResultsPanel';
 
 type Step = 'form' | 'generating' | 'results';
@@ -19,19 +18,16 @@ const DEFAULT_CONFIG: BlogConfig = {
 };
 
 const loadingSteps = [
-  { label: 'Analyzing topic', icon: '🔍' },
-  { label: 'Writing articles', icon: '✍️' },
-  { label: 'Polishing content', icon: '✨' },
+  { label: 'Reading settings', icon: '📋' },
+  { label: 'Building config', icon: '⚙️' },
+  { label: 'Preparing site', icon: '🏗️' },
 ];
 
 export default function GeneratorClient() {
   const [step, setStep] = useState<Step>('form');
   const [config, setConfig] = useState<BlogConfig>(DEFAULT_CONFIG);
-  const [articles, setArticles] = useState<GeneratedArticle[]>([]);
   const [siteConfig, setSiteConfig] = useState<BlogSiteConfig | null>(null);
-  const [previewArticle, setPreviewArticle] = useState<GeneratedArticle | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [usedFallback, setUsedFallback] = useState(false);
   const [progress, setProgress] = useState(0);
   const [customColor, setCustomColor] = useState('');
 
@@ -70,13 +66,12 @@ export default function GeneratorClient() {
     setStep('generating');
     setProgress(0);
 
-    // Animate progress
     const interval = setInterval(() => {
       setProgress(p => {
         if (p >= 90) { clearInterval(interval); return 90; }
-        return p + Math.random() * 8;
+        return p + Math.random() * 15;
       });
-    }, 400);
+    }, 200);
 
     try {
       const res = await fetch('/api/generate', {
@@ -94,9 +89,7 @@ export default function GeneratorClient() {
 
       setProgress(100);
       setTimeout(() => {
-        setArticles(data.articles);
         setSiteConfig(data.siteConfig || null);
-        setUsedFallback(!!data.usedFallback);
         setStep('results');
         applyThemeColor(config.primaryColor);
       }, 500);
@@ -109,12 +102,11 @@ export default function GeneratorClient() {
   };
 
   const handleExportZip = async () => {
-    const result: GenerationResult = { blogConfig: config, siteConfig: siteConfig!, articles };
     try {
       const res = await fetch('/api/export', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result),
+        body: JSON.stringify({ blogConfig: config, siteConfig: siteConfig!, articles: [] }),
       });
       if (!res.ok) throw new Error('Export failed');
       const blob = await res.blob();
@@ -132,46 +124,29 @@ export default function GeneratorClient() {
   const handleReset = () => {
     setStep('form');
     setConfig(DEFAULT_CONFIG);
-    setArticles([]);
     setSiteConfig(null);
-    setPreviewArticle(null);
-    setUsedFallback(false);
     setError(null);
     setProgress(0);
-    // Reset CSS vars
     document.documentElement.style.setProperty('--color-primary', '#6366F1');
     document.documentElement.style.setProperty('--color-primary-hover', '#4F46E5');
     document.documentElement.style.setProperty('--color-primary-light', '#EEF2FF');
     document.documentElement.style.setProperty('--color-primary-rgb', '99, 102, 241');
   };
 
-  if (previewArticle) {
-    return (
-      <ArticlePreview
-        article={previewArticle}
-        blogConfig={config}
-        onClose={() => setPreviewArticle(null)}
-      />
-    );
-  }
-
   if (step === 'results') {
     return (
       <ResultsPanel
-        articles={articles}
         blogConfig={config}
-        onPreview={setPreviewArticle}
         onExportZip={handleExportZip}
         onReset={handleReset}
         error={error}
-        usedFallback={usedFallback}
       />
     );
   }
 
   if (step === 'generating') {
     const currentStep = progress < 33 ? 0 : progress < 66 ? 1 : 2;
-    
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
         <motion.div
@@ -179,23 +154,20 @@ export default function GeneratorClient() {
           animate={{ opacity: 1, scale: 1 }}
           className="card p-12 max-w-md w-full text-center shadow-xl border-0"
         >
-          {/* Animated loader */}
           <div className="mb-8 flex justify-center">
             <div className="loading-container">
-              {/* Orbiting dots */}
               <div className="loading-orbit">
                 <div className="loading-dot" style={{ animation: 'orbit 2s linear infinite' }} />
                 <div className="loading-dot" style={{ animation: 'orbit 2s linear infinite 0.5s' }} />
                 <div className="loading-dot" style={{ animation: 'orbit 2s linear infinite 1s' }} />
                 <div className="loading-dot" style={{ animation: 'orbit 2s linear infinite 1.5s' }} />
               </div>
-              {/* Center brain */}
               <motion.div
                 className="loading-brain"
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                🧠
+                🏗️
               </motion.div>
             </div>
           </div>
@@ -207,20 +179,19 @@ export default function GeneratorClient() {
             className="text-2xl font-bold text-gray-900 mb-2"
             style={{ fontFamily: 'var(--font-poppins)' }}
           >
-            Creating your blog...
+            Building your blog...
           </motion.h2>
-          
+
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
             className="text-gray-500 mb-8 text-sm"
           >
-            AI is crafting 3 unique articles for{' '}
+            Preparing a complete site for{' '}
             <span className="font-semibold text-indigo-600">{config.name}</span>
           </motion.p>
 
-          {/* Progress bar */}
           <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden mb-4">
             <motion.div
               className="h-full rounded-full progress-bar"
@@ -233,10 +204,9 @@ export default function GeneratorClient() {
               transition={{ duration: 0.5 }}
             />
           </div>
-          
+
           <p className="text-sm font-semibold text-indigo-600 mb-6">{Math.round(progress)}%</p>
 
-          {/* Step indicators */}
           <div className="flex justify-center gap-3">
             {loadingSteps.map((s, i) => (
               <motion.div
@@ -257,15 +227,6 @@ export default function GeneratorClient() {
               </motion.div>
             ))}
           </div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="mt-6 text-xs text-gray-400"
-          >
-            This usually takes 20-40 seconds
-          </motion.p>
         </motion.div>
       </div>
     );
@@ -300,25 +261,11 @@ export default function GeneratorClient() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-4"
-            style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}
-          >
-            <motion.span
-              animate={{ rotate: [0, 360] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-            >
-              ✨
-            </motion.span>
-            Powered by AI
-          </motion.div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'var(--font-poppins)' }}>
             Create your blog in seconds
           </h2>
           <p className="text-gray-500 text-lg max-w-xl mx-auto">
-            Fill in a few details — AI generates 3 complete articles and a deployable Next.js blog for you.
+            Fill in a few details and get a complete deployable Next.js blog — ready to customize.
           </p>
         </motion.div>
 
@@ -498,13 +445,13 @@ export default function GeneratorClient() {
 
               <div>
                 <label className="label" htmlFor="content-about">
-                  What should the articles be about? *
+                  What is your blog about? *
                 </label>
                 <textarea
                   id="content-about"
                   className="input-field resize-none"
                   rows={5}
-                  placeholder="Describe the specific topic, audience, and tone you want. e.g., 'Python tips for beginner developers who want to build automation scripts. Friendly and practical tone.'"
+                  placeholder="Describe the topic, audience, and tone. e.g., 'Python tips for beginner developers who want to build automation scripts. Friendly and practical tone.'"
                   value={config.contentAbout}
                   onChange={e => setConfig(c => ({ ...c, contentAbout: e.target.value }))}
                   maxLength={500}
@@ -536,8 +483,8 @@ export default function GeneratorClient() {
               className="btn btn-primary w-full justify-center text-base py-4 shadow-lg"
               style={!isFormValid ? { opacity: 0.5, cursor: 'not-allowed', transform: 'none' } : {}}
             >
-              <span>✨</span>
-              Generate 3 Articles with AI
+              <span>🚀</span>
+              Generate My Blog Site
             </motion.button>
           </motion.div>
 
@@ -551,7 +498,6 @@ export default function GeneratorClient() {
             <div className="sticky top-24 space-y-4">
               <div className="card p-5 shadow-sm">
                 <h3 className="font-bold text-gray-900 text-sm mb-4 uppercase tracking-wide">Live Preview</h3>
-                {/* Mini blog preview */}
                 <motion.div
                   className="rounded-lg overflow-hidden border border-gray-200"
                   whileHover={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)' }}
@@ -627,10 +573,10 @@ export default function GeneratorClient() {
                 <h3 className="font-bold text-gray-900 text-sm mb-3">What you&apos;ll get</h3>
                 <ul className="space-y-2">
                   {[
-                    '3 full markdown articles',
-                    'SEO-optimized frontmatter',
                     'Complete Next.js project',
+                    'Full site with all pages',
                     'Themed with your colors',
+                    'AI chatbot built-in',
                     'Downloadable ZIP file',
                   ].map((item, i) => (
                     <motion.li

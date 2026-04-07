@@ -18,7 +18,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "BlogForge AI — Create Stunning Blogs in Seconds",
   description:
-    "AI-powered blog generator. Enter your blog name and topic — get 3 complete markdown articles plus a deployable Next.js blog. No coding required.",
+    "Blog site generator. Enter your blog name and topic — get a complete deployable Next.js blog with all pages. No coding required.",
   keywords: ["blog generator", "AI blog", "markdown blog", "Next.js blog", "content generator", "BlogForge"],
   authors: [{ name: "BlogForge AI" }],
   openGraph: {

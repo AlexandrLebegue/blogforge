@@ -2,7 +2,7 @@ import GeneratorClient from "@/components/GeneratorClient";
 
 export const metadata = {
   title: "Create Your Blog — BlogForge AI",
-  description: "Fill in your blog details and let AI generate 3 complete articles plus a deployable Next.js blog.",
+  description: "Fill in your blog details and get a complete deployable Next.js blog — ready to customize.",
 };
 
 export default function GeneratorPage() {
